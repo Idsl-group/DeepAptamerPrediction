@@ -2,7 +2,7 @@
 import tensorflow as tf
 import keras
 import re
-#import keras_tuner
+# import keras_tuner
 from keras.regularizers import *
 from tabnanny import verbose
 import numpy as np
@@ -19,7 +19,6 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import matthews_corrcoef as mcc
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.layers import Conv1D,Conv2D, Dense, MaxPooling1D,MaxPooling2D, Flatten, LSTM, Input
-
 import tensorflow.keras.backend as K
 from tensorflow.keras.utils import plot_model
 from sklearn.metrics import confusion_matrix

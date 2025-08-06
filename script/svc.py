@@ -2,6 +2,7 @@ from sklearn.svm import SVC
 #from pycaret.classification import *
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from sklearn import svm, datasets
 from sklearn.model_selection import train_test_split
