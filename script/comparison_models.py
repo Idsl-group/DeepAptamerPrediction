@@ -1,4 +1,3 @@
-#%%
 import tensorflow as tf
 import keras
 import re
@@ -19,10 +18,10 @@ from sklearn.metrics import average_precision_score as  aps
 from sklearn.metrics import f1_score
 from sklearn.metrics import matthews_corrcoef as mcc
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.layers import Conv1D,Conv2D, Dense, MaxPooling1D,MaxPooling2D, Flatten, LSTM, Input, Attention, MultiHeadAttention
+from tensorflow.keras.layers import Conv1D,Conv2D, Dense, MaxPooling1D,MaxPooling2D, Flatten, LSTM, Input, Attention, MultiHeadAttention  # type: ignore
     
-import tensorflow.keras.backend as K
-from tensorflow.keras.utils import plot_model
+import tensorflow.keras.backend as K # type: ignore
+from tensorflow.keras.utils import plot_model # type: ignore
 from sklearn.metrics import confusion_matrix
 import itertools
 #import pydot
@@ -32,76 +31,16 @@ import numpy as np
 from sklearn import metrics
 import pylab as plt
 import math
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding,Bidirectional,Dropout
-from tensorflow.keras.layers import concatenate
-from tensorflow.keras.models import Model
+import pickle as pkl
+from tensorflow.keras.models import Sequential # type: ignore
+from tensorflow.keras.layers import Embedding,Bidirectional,Dropout # type: ignore
+from tensorflow.keras.layers import concatenate # type: ignore
+from tensorflow.keras.models import Model # type: ignore
 from focal_loss import BinaryFocalLoss
 #from keras.layers.merge import Concatenate
 TF_ENABLE_ONEDNN_OPTS=0
-#%%
 #weightdir = '/home/yangx/DeepSELEX/script/Classification/'
-def create_deepselex():
-    model = Sequential()
-    model.add(Conv1D(filters=512, kernel_size=8
-                    , strides=1
-                    , kernel_initializer='RandomNormal'
-                    , activation = 'relu'
-                    , kernel_regularizer = l2(5e-3)
-                    , use_bias=True
-                    , bias_initializer='RandomNormal'
-                    , input_shape=(35, 4)))
-    #model.add(MaxPooling1D(pool_size=4))
-    #model.add(Conv1D(filters=32, kernel_size=12, 
-    #             input_shape=(35, 4)))
-    model.add(MaxPooling1D(pool_size=5, strides=None
-                           , padding = 'valid'
-                           , data_format = 'channels_last'))
-    model.add(Flatten())
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(2, activation='sigmoid'))
 
-
-    #model.summary()
-    Adam = keras.optimizers.Adam(lr=1e-3, beta_1=0.9, beta_2=0.999
-                                , decay=1e-5,
-                                amsgrad=False)
-
-    model.compile(loss='categorical_crossentropy', optimizer='adam'
-                    #, metrics=['accuracy']
-                    )
-    return model
-def model_deepselex_run(model_path, X_train, y_train, serialize_dir,model,batch_size=64):
-    param = model.summary()
-    print(param)
-    history = model.fit(X_train, y_train
-                    , batch_size = batch_size
-                    , epochs=30
-                    , verbose=1
-                    , shuffle=True
-                    , validation_split=0.3
-                    , callbacks=[keras.callbacks.ModelCheckpoint(model_path
-                        , monitor='val_loss'
-                        , verbose=0, save_best_only=True
-                        , save_weights_only=False, mode='auto'
-                        , period=1),
-                        keras.callbacks.EarlyStopping(monitor='val_loss'
-                        , min_delta=0
-                        , patience=1
-                        , verbose=0, mode='auto', restore_best_weights=True)
-                                ])
-
-    model_json = model.to_json()
-    with open(serialize_dir+"model.json", "w") as json_file:
-        json_file.write(model_json)
-    # serialize weights to HDF5
-    model.save_weights(serialize_dir+"model.h5")
-    print("Saved model to disk")
-    return history
-
-# %%
 def evaluate(model,X_test,y_test,resultdir,dnn_type):
     y_score = model.predict(X_test)
     plt.rcParams['font.size'] = 14
@@ -151,7 +90,8 @@ def evaluate(model,X_test,y_test,resultdir,dnn_type):
     plt.savefig(resultdir+'ROC.png')
     plt.show()
     return y_test, y_score,fpr,tpr,roc_auc
-#%%
+
+
 class deepselex:
     def __init__(self, test_ratio,inputfile,seqfile,pos_num,neg_num,outputpath):
         self.test_ratio,self.inputfile,self.seqfile,self.pos_num,self.neg_num,self.outputpath = test_ratio,inputfile,seqfile,pos_num,neg_num,outputpath
@@ -161,7 +101,6 @@ class deepselex:
         shape_fea = []
         label_pos=float(self.pos_num)
         label_neg=float(self.neg_num)
-        #seq = pd.read_csv(datadir+"sequence.txt",header=None)
         with open(self.inputfile) as sequences:
             for line in sequences:
                 line = re.split("\t|\n",line)
@@ -190,7 +129,6 @@ class deepselex:
         print('One-hot encoded labels:\n',input_labels.T)
         self.onehot_feature,self.input_label,self.shape_feature=onehot_features,input_labels,shape_features
     
-    #%%
     def data_sample(self,pos,neg):
         self.pos,self.neg=pos,neg
         self.onehot_features=np.concatenate((self.onehot_feature[:pos],self.onehot_feature[neg:]))
@@ -278,81 +216,142 @@ class deepselex:
         plt.grid(False)
         
         plt.savefig(self.resultdir+'all_metircs.png')
-# %%
-def evaluate_svc(model,X_test,y_test,resultdir,dnn_type):
-    y_score = model.predict_proba(X_test)
-    plt.rcParams['font.size'] = 14
-    Font={'size':43, 'family':'Arial'}
-    cm = confusion_matrix(y_test, 
-                      np.argmax(y_score,axis=1))
-    print('Confusion matrix:\n',cm)
-    cm = cm.astype('float') / cm.sum(axis = 1)[:, np.newaxis]
-    plt.imshow(cm, cmap=plt.cm.Blues)
-    plt.title(dnn_type,Font)
-    plt.colorbar()
 
-    plt.ylabel('True label',fontdict=Font)
-    plt.xlabel('Predicted label',Font)
-    plt.xticks([0, 1]); plt.yticks([0, 1])
-    plt.grid('off')
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, format(cm[i, j], '.2f'),
-                 fontdict=Font,
-                 horizontalalignment='center',
-                 color='white' if cm[i, j] > 0.5 else 'black')
-    
-    plt.savefig(resultdir+'confusion_matrix.png')
-    plt.show()
-    plt.clf()
-    
-    Font={'size':18, 'family':'Arial'}
-    fpr, tpr, thersholds = roc_curve(y_test, y_score.T[1], pos_label=1)
-    roc_auc = auc(fpr,tpr)
-    plt.figure(figsize=(6,6))
-    #plt.plot([0, 1], [0, 1], 'k--')
-    plt.plot(fpr, tpr,label = dnn_type+' = %0.3f' % roc_auc, color='RoyalBlue')
-    #plt.xlabel('False positive rate')
-    #plt.ylabel('True positive rate')
-    plt.title('ROC curve',Font)
-    #plt.legend(loc='best')
-    #plt.show()   
-    #plt.savefig(resultdir+'ROC.png')
-    #plt.clf() 
-    plt.legend(loc = 'lower right', prop=Font)
-    plt.plot([0, 1], [0, 1],'k--')
-    plt.xlim([0, 1.05])
-    plt.ylim([0, 1.05])
-    plt.ylabel('True Positive Rate', Font)
-    plt.xlabel('False Positive Rate', Font)
-    plt.tick_params(labelsize=18)
-    plt.savefig(resultdir+'ROC.png')
-    plt.show()
-    return y_test, y_score,fpr,tpr,roc_auc
+def create_deepselex():
+    model = Sequential()
+    model.add(Conv1D(filters=512, kernel_size=8
+                    , strides=1
+                    , kernel_initializer='RandomNormal'
+                    , activation = 'relu'
+                    , kernel_regularizer = l2(5e-3)
+                    , use_bias=True
+                    , bias_initializer='RandomNormal'
+                    , input_shape=(35, 4)))
+    #model.add(MaxPooling1D(pool_size=4))
+    #model.add(Conv1D(filters=32, kernel_size=12, 
+    #             input_shape=(35, 4)))
+    model.add(MaxPooling1D(pool_size=5, strides=None
+                           , padding = 'valid'
+                           , data_format = 'channels_last'))
+    model.add(Flatten())
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(2, activation='sigmoid'))
 
 
-class svc:
-    def __init__(self, test_ratio,inputfile,seqfile,pos_num,neg_num,outputpath):
-        self.test_ratio,self.inputfile,self.seqfile,self.pos_num,self.neg_num,self.outputpath = test_ratio,inputfile,seqfile,pos_num,neg_num,outputpath
+    #model.summary()
+    Adam = tf.keras.optimizers.legacy.Adam(lr=1e-3, beta_1=0.9, beta_2=0.999
+                                , decay=1e-5,
+                                amsgrad=False)
+
+    model.compile(loss='categorical_crossentropy', optimizer='adam'
+                    #, metrics=['accuracy']
+                    )
+    return model
+
+def model_deepselex_run(model_path, X_train, y_train, serialize_dir,model,batch_size=64):
+    param = model.summary()
+    print(param)
+    history = model.fit(X_train, y_train
+                    , batch_size = batch_size
+                    , epochs=30
+                    , verbose=1
+                    , shuffle=True
+                    , validation_split=0.3
+                    , callbacks=[keras.callbacks.ModelCheckpoint(model_path
+                        , monitor='val_loss'
+                        , verbose=0, save_best_only=True
+                        , save_weights_only=False, mode='auto'
+                        , period=1),
+                        keras.callbacks.EarlyStopping(monitor='val_loss'
+                        , min_delta=0
+                        , patience=1
+                        , verbose=0, mode='auto', restore_best_weights=True)
+                                ])
+
+    model_json = model.to_json()
+    with open(serialize_dir+"model.json", "w") as json_file:
+        json_file.write(model_json)
+    # serialize weights to HDF5
+    model.save_weights(serialize_dir+"model.h5")
+    print("Saved model to disk")
+    return history
+
+# This is SVM
+# class svc:
+#     def __init__(self, test_ratio,inputfile,seqfile,pos_num,neg_num,outputpath):
+#         self.test_ratio,self.inputfile,self.seqfile,self.pos_num,self.neg_num,self.outputpath = test_ratio,inputfile,seqfile,pos_num,neg_num,outputpath
     
 
-    def data_process(self):
+#     def data_process(self):
     
-        Exp = pd.read_csv(self.inputfile,header=None,sep='\t')
-        data = Exp[Exp.columns[2:]]
-        data = pd.concat([data[:int(self.pos_num)],data[-int(self.neg_num):]])
-        data['affinity'] = [1]*int(self.pos_num)+[0]*int(self.neg_num)
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(np.array(data.iloc[:,:-1]), np.array(data['affinity']), test_size=self.test_ratio, random_state=42)
+#         Exp = pd.read_csv(self.inputfile,header=None,sep='\t')
+#         data = Exp[Exp.columns[2:]]
+#         data = pd.concat([data[:int(self.pos_num)],data[-int(self.neg_num):]])
+#         data['affinity'] = [1]*int(self.pos_num)+[0]*int(self.neg_num)
+#         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(np.array(data.iloc[:,:-1]), np.array(data['affinity']), test_size=self.test_ratio, random_state=42)
     
-    def model_svc(self):
-        self.resultdir=self.outputpath
-        self.clf = SVC(kernel = "rbf"
-              ,gamma="auto"
-              ,degree = 1
-              ,cache_size = 5000
-              ,probability=True
-             ).fit(self.X_train, self.y_train)
-        self.y_label_svc, self.y_score_svc, self.fpr_svc, self.tpr_svc, self.roc_auc_svc = evaluate_svc(self.clf,self.X_test,self.y_test,self.resultdir+'svc/','SVM')
-        #score = clf.predict(X_test)
-        #svc_fpr, svc_tpr, thresholds = roc_curve(float(y_test),float(score),pos_label=1)
-        #self.y_score_svc = clf.predict(self.X_test)
-# %%
+#     def model_svc(self):
+#         self.resultdir=self.outputpath
+#         self.clf = SVC(kernel = "rbf"
+#               ,gamma="auto"
+#               ,degree = 1
+#               ,cache_size = 5000
+#               ,probability=True
+#              ).fit(self.X_train, self.y_train)
+#         self.y_label_svc, self.y_score_svc, self.fpr_svc, self.tpr_svc, self.roc_auc_svc = evaluate_svc(self.clf,self.X_test,self.y_test,self.resultdir+'svc/','SVM')
+#         #score = clf.predict(X_test)
+#         #svc_fpr, svc_tpr, thresholds = roc_curve(float(y_test),float(score),pos_label=1)
+#         #self.y_score_svc = clf.predict(self.X_test)
+
+
+# def evaluate_svc(model,X_test,y_test,resultdir,dnn_type):
+#     y_score = model.predict_proba(X_test)
+#     plt.rcParams['font.size'] = 14
+#     Font={'size':43, 'family':'Arial'}
+#     cm = confusion_matrix(y_test, 
+#                       np.argmax(y_score,axis=1))
+#     print('Confusion matrix:\n',cm)
+#     cm = cm.astype('float') / cm.sum(axis = 1)[:, np.newaxis]
+#     plt.imshow(cm, cmap=plt.cm.Blues)
+#     plt.title(dnn_type,Font)
+#     plt.colorbar()
+
+#     plt.ylabel('True label',fontdict=Font)
+#     plt.xlabel('Predicted label',Font)
+#     plt.xticks([0, 1]); plt.yticks([0, 1])
+#     plt.grid('off')
+#     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+#         plt.text(j, i, format(cm[i, j], '.2f'),
+#                  fontdict=Font,
+#                  horizontalalignment='center',
+#                  color='white' if cm[i, j] > 0.5 else 'black')
+    
+#     plt.savefig(resultdir+'confusion_matrix.png')
+#     plt.show()
+#     plt.clf()
+    
+#     Font={'size':18, 'family':'Arial'}
+#     fpr, tpr, thersholds = roc_curve(y_test, y_score.T[1], pos_label=1)
+#     roc_auc = auc(fpr,tpr)
+#     plt.figure(figsize=(6,6))
+#     #plt.plot([0, 1], [0, 1], 'k--')
+#     plt.plot(fpr, tpr,label = dnn_type+' = %0.3f' % roc_auc, color='RoyalBlue')
+#     #plt.xlabel('False positive rate')
+#     #plt.ylabel('True positive rate')
+#     plt.title('ROC curve',Font)
+#     #plt.legend(loc='best')
+#     #plt.show()   
+#     #plt.savefig(resultdir+'ROC.png')
+#     #plt.clf() 
+#     plt.legend(loc = 'lower right', prop=Font)
+#     plt.plot([0, 1], [0, 1],'k--')
+#     plt.xlim([0, 1.05])
+#     plt.ylim([0, 1.05])
+#     plt.ylabel('True Positive Rate', Font)
+#     plt.xlabel('False Positive Rate', Font)
+#     plt.tick_params(labelsize=18)
+#     plt.savefig(resultdir+'ROC.png')
+#     plt.show()
+#     return y_test, y_score,fpr,tpr,roc_auc
