@@ -44,7 +44,7 @@ TF_ENABLE_ONEDNN_OPTS=0
 def evaluate(model,X_test,y_test,resultdir,dnn_type):
     y_score = model.predict(X_test)
     plt.rcParams['font.size'] = 14
-    Font={'size':43, 'family':'Arial'}
+    Font={'size':43}
     cm = confusion_matrix(np.argmax(y_test, axis=1), 
                       np.argmax(y_score, axis=1))
     print('Confusion matrix:\n',cm)
@@ -101,19 +101,12 @@ class deepselex:
         shape_fea = []
         label_pos=float(self.pos_num)
         label_neg=float(self.neg_num)
-        with open(self.inputfile) as sequences:
-            for line in sequences:
-                line = re.split("\t|\n",line)
-                onehot = [float(x) for x in line[2:142]]
-                onehot_file = []
-                for i in range(0,140,4):
-                    onehot_file.append(onehot[i:i+4])
-                onehot_fea.append(onehot_file)
 
-                shap = line[142:-1]
-                #shap.append(line[0])
-                shape = [float(x) for x in shap]
-                shape_fea.append(shape)
+        with open(self.inputfile, "rb") as f:
+            data = pkl.load(f)
+            
+            onehot_fea = data['onehot_sequences']
+            shape_fea = data['shapes']
             
         onehot_features = np.array(onehot_fea[:int(label_pos)]+onehot_fea[-1*int(label_neg):])
         shape_features = np.array(shape_fea[:int(label_pos)]+shape_fea[-1*int(label_neg):])
@@ -128,6 +121,7 @@ class deepselex:
         print('Labels:\n',labels.T)
         print('One-hot encoded labels:\n',input_labels.T)
         self.onehot_feature,self.input_label,self.shape_feature=onehot_features,input_labels,shape_features
+        print("DATA PROCESSING COMPLETE")
     
     def data_sample(self,pos,neg):
         self.pos,self.neg=pos,neg
@@ -136,6 +130,8 @@ class deepselex:
         self.shape_features=np.concatenate((self.shape_feature[:pos],self.shape_feature[neg:]))
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.onehot_features, self.input_labels, test_size=self.test_ratio, random_state=42)
         self.X_train2, self.X_test2, self.y_train, self.y_test = train_test_split(self.shape_features, self.input_labels, test_size=self.test_ratio, random_state=42)
+        print("DATA SAMPLING COMPLETE")
+
     def model_deepselex(self):
         #self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.onehot_features, self.input_labels, test_size=self.test_ratio, random_state=42)
         #self.X_train2, self.X_test2, self.y_train, self.y_test = train_test_split(self.shape_features, self.input_labels, test_size=self.test_ratio, random_state=42)
@@ -144,10 +140,13 @@ class deepselex:
         #resultdir = "/Volumes/Data Backup/YX/Aptamer/script/Classification/LSTM/"
         
         self.model_selex = create_deepselex()
+        print("DEEPSELEX MODEL CREATED")
         #model_cnn.load_weights(self.resultdir+'cnn/model.h5')
-        self.history_selex = model_deepselex_run(self.resultdir+'model.h5', self.X_train, self.y_train, self.resultdir,self.model_selex,640)
+        self.history_selex = model_deepselex_run(self.resultdir+'model.h5', self.X_train, self.y_train, self.resultdir,self.model_selex,300)
+        print("DEEPSELEX MODEL RUN COMPLETE")
         #create_plots(self.model_cnn,self.history_cnn,self.resultdir+'cnn/')
-        self.y_label_selex, self.y_score_selex, self.fpr_selex, self.tpr_selex, self.roc_auc_selex = evaluate(self.model_selex,self.X_test,self.y_test,self.resultdir+'deepselex/','DeepSELEX')
+        self.y_label_selex, self.y_score_selex, self.fpr_selex, self.tpr_selex, self.roc_auc_selex = evaluate(self.model_selex,self.X_test,self.y_test,self.resultdir,'DeepApta')
+        print("DEEPSELEX EVALUATION COMPLETE")
     
     
     def all_metrics(self,target):
@@ -242,20 +241,20 @@ def create_deepselex():
 
     #model.summary()
     Adam = tf.keras.optimizers.legacy.Adam(lr=1e-3, beta_1=0.9, beta_2=0.999
-                                , decay=1e-5,
+                                , decay=0.3,
                                 amsgrad=False)
 
-    model.compile(loss='categorical_crossentropy', optimizer='adam'
-                    #, metrics=['accuracy']
+    model.compile(loss='categorical_crossentropy', optimizer=Adam
+                    , metrics=['accuracy']
                     )
     return model
 
-def model_deepselex_run(model_path, X_train, y_train, serialize_dir,model,batch_size=64):
+def model_deepselex_run(model_path, X_train, y_train, serialize_dir,model,batch_size=300):
     param = model.summary()
     print(param)
     history = model.fit(X_train, y_train
                     , batch_size = batch_size
-                    , epochs=30
+                    , epochs=100
                     , verbose=1
                     , shuffle=True
                     , validation_split=0.3
@@ -266,7 +265,7 @@ def model_deepselex_run(model_path, X_train, y_train, serialize_dir,model,batch_
                         , period=1),
                         keras.callbacks.EarlyStopping(monitor='val_loss'
                         , min_delta=0
-                        , patience=1
+                        , patience=10
                         , verbose=0, mode='auto', restore_best_weights=True)
                                 ])
 

@@ -36,7 +36,7 @@ from tensorflow.keras.models import Model # type: ignore
 from focal_loss import BinaryFocalLoss
 import sys
 import os
-from comparison_models import *
+from deepapta import *
 
 # Setup Directory Files
 TF_ENABLE_ONEDNN_OPTS=0
@@ -47,17 +47,17 @@ datadir = os.path.join(BASE_DIR, "../data/sequence/")
 weightdir = os.path.join(BASE_DIR, "../model/")
 
 # CTFG Model Creation
-CTGF_DeepAptamer = deepselex(0.1, os.path.join(datadir, "CT-20.txt"), os.path.join(datadir, "CT-20.txt"), '150000', '300000', os.path.join(weightdir, 'CTGF/9k_1w/'))
+CTGF_DeepAptamer = deepapta(0.1, os.path.join(datadir, "CT_Shapes/CT-20_data.pkl"), os.path.join(datadir, "CT-20.txt"), '150000', '300000', os.path.join(weightdir, 'CTGF/9k_1w/'))
 
 # CTFG Model Data Setup
 CTGF_DeepAptamer.data_process()
 
 # # CTFG Model Sample Setup
-# pos,neg=9000,-10000
-# CTGF_DeepAptamer.data_sample(pos, neg)
+pos,neg=9000,-10000
+CTGF_DeepAptamer.data_sample(pos, neg)
 
 # # CTFG Model Setup Model & Run
-# CTGF_DeepAptamer.model_deepselex()
+CTGF_DeepAptamer.model(256,20,100)
 
 # # CTFG Model Get Metrics
 # CTGF_DeepAptamer.all_metrics()

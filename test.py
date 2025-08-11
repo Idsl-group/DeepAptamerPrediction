@@ -1,9 +1,12 @@
-import h5py
+import pickle as pkl
 
-# Open the HDF5 file in read mode
-with h5py.File('model/BCMA/cnn_bilstm/model.h5', 'r') as f:
-    # List top-level keys (groups and datasets)
-    for key in f.keys():
-        print(f"{key} : {f[key]}")
+with open("data/sequence/CT_Shapes/CT-20_data.pkl", "rb") as f:
+    data = pkl.load(f)
+    
+    onehot_fea = data['onehot_sequences']
+    shape_fea = data['shapes']
 
-# print(float('0.03673278252655676'))
+    ex = shape_fea[0]
+
+    print(ex)
+    print(len(ex))
