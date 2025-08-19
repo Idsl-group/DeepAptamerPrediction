@@ -56,8 +56,26 @@ CTGF_DeepAptamer.data_process()
 pos,neg=9000,-10000
 CTGF_DeepAptamer.data_sample(pos, neg)
 
-# # CTFG Model Setup Model & Run
-CTGF_DeepAptamer.model(256,20,100)
 
-# # CTFG Model Get Metrics
-# CTGF_DeepAptamer.all_metrics()
+# CTGF_DeepAptamer.tuner()
+
+# diagnose_training_data(
+#     CTGF_DeepAptamer.X_train,
+#     CTGF_DeepAptamer.X_train2.reshape(-1, 126, 1),
+#     CTGF_DeepAptamer.y_train
+# )
+
+# temp_model = create_cnnbilstm_attention(gamm=2,pos_alpha=0.25,dropout=0.1,layer_num=100)
+# diagnose_model_behavior(
+#     temp_model,
+#     CTGF_DeepAptamer.X_train,
+#     CTGF_DeepAptamer.X_train2.reshape(-1, 126, 1),
+#     CTGF_DeepAptamer.y_train
+# )
+
+
+# CTFG Model Setup Model & Run
+CTGF_DeepAptamer.model(128,100,64)
+
+# CTFG Model Get Metrics
+CTGF_DeepAptamer.all_metrics('CTGF')
